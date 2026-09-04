@@ -26,3 +26,7 @@ Desktop.ini
 __pycache__/
 *.pyc
 _tmp_inspect_chats.py
+
+##
+
+DESIGN.md
