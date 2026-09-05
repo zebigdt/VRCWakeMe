@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Windows.Forms;
-using IOPath = System.IO.Path;
 
 namespace VRCWakeMe.App;
 
@@ -11,17 +10,14 @@ internal sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _dismissItem;
     private readonly Icon _disarmedIcon;
     private readonly Icon _armedIcon;
-    private readonly Icon _alarmingIcon;
     private bool _suppressArmedEvent;
 
     public TrayIcon()
     {
-        var assets = IOPath.Combine(AppContext.BaseDirectory, "Assets");
-        _disarmedIcon = new Icon(IOPath.Combine(assets, "disarmed.ico"));
-        _armedIcon = new Icon(IOPath.Combine(assets, "armed.ico"));
-        _alarmingIcon = new Icon(IOPath.Combine(assets, "alarming.ico"));
+        _disarmedIcon = SleepIcons.Disarmed;
+        _armedIcon = SleepIcons.Armed;
 
-        _armedItem = new ToolStripMenuItem("Armed")
+        _armedItem = new ToolStripMenuItem("Activated")
         {
             CheckOnClick = true
         };
@@ -77,18 +73,18 @@ internal sealed class TrayIcon : IDisposable
 
         if (playing)
         {
-            _notify.Icon = _alarmingIcon;
+            _notify.Icon = _armedIcon;
             _notify.Text = "VRCWakeMe — alarm";
         }
         else if (armed)
         {
             _notify.Icon = _armedIcon;
-            _notify.Text = "VRCWakeMe — armed";
+            _notify.Text = "VRCWakeMe — activated";
         }
         else
         {
             _notify.Icon = _disarmedIcon;
-            _notify.Text = "VRCWakeMe — disarmed";
+            _notify.Text = "VRCWakeMe — inactive";
         }
     }
 
@@ -98,6 +94,5 @@ internal sealed class TrayIcon : IDisposable
         _notify.Dispose();
         _disarmedIcon.Dispose();
         _armedIcon.Dispose();
-        _alarmingIcon.Dispose();
     }
 }

@@ -1,7 +1,7 @@
 namespace VRCWakeMe.Core;
 
 /// <summary>
-/// Fires only on false → true. A contact that stays held will not retrigger.
+/// Fires only on false → true. A grab that stays held will not retrigger.
 /// </summary>
 public sealed class RisingEdgeDetector
 {

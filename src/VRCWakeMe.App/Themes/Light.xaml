@@ -1,0 +1,26 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#5C5C5C"/>
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#005FB8"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#003E92"/>
+    <SolidColorBrush x:Key="AccentTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ButtonBgBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ButtonHoverBrush" Color="#F6F6F6"/>
+    <SolidColorBrush x:Key="ControlBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#D0D0D0"/>
+    <SolidColorBrush x:Key="ReadOnlyControlBrush" Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="ArmedGreenBrush" Color="#168039"/>
+    <SolidColorBrush x:Key="SwitchOffBrush" Color="#8A8A8A"/>
+    <SolidColorBrush x:Key="SliderTrackBrush" Color="#C6C6C6"/>
+    <SolidColorBrush x:Key="SliderFillBrush" Color="#005FB8"/>
+
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}" Color="#5C5C5C"/>
+</ResourceDictionary>

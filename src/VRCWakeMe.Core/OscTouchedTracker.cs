@@ -6,7 +6,7 @@ public sealed class OscTouchedTracker
 
     public bool Observe(string address, object? value)
     {
-        if (!OscAddresses.IsTouched(address))
+        if (!OscAddresses.IsGrabbed(address))
         {
             return false;
         }

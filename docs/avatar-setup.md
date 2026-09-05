@@ -1,42 +1,50 @@
 # Avatar setup (Unity)
 
-VRCWakeMe listens for one OSC parameter: `/avatar/parameters/WakeMe/Touched`.
+Add an **invisible** grab point to the avatar you sleep in. Other players grab that spot to wake you. Do not add a mesh, cube, or charm.
 
-You add a **VRC Contact Receiver** on the avatar you sleep in. This repo does not ship a Unity prefab.
+VRCWakeMe listens for one bool: `grabbed_IsGrabbed`.
 
-## Contact receiver
+## 1. Create the invisible handle
 
-1. Create an empty GameObject on the chest, shoulder, or head. Name it `WakeMeContact`.
-2. Add **VRC Contact Receiver**.
-3. Shape: Sphere, radius large enough to poke easily (about 0.15–0.3 m). Contacts cannot exceed 3 m radius.
-4. Collision tags: `Hand` and `Finger` (built-in senders on other avatars).
-5. **Allow Others**: on.
-6. **Allow Self**: off (so you do not wake yourself).
-7. **Local Only**: on (runs only on your client, does not cost remote performance rank).
-8. Receiver type: **Constant**.
-9. Parameter: `WakeMe/Touched`.
-10. Use a **Bool** parameter.
+1. In the Hierarchy, select a body bone (Chest or UpperChest is fine).
+2. Right-click it → **Create Empty**. Name it `WakeMeGrab`.
+3. Right-click `WakeMeGrab` → **Create Empty**. Name the child `WakeMeGrabEnd`.
+4. Select `WakeMeGrabEnd` and in the Transform, set **Position** to `0, 0, 0.05` (local). That gives PhysBone a short bone to grab.
+5. Leave both objects empty. No Mesh Filter, no Mesh Renderer, no materials.
 
-Constant is required. **OnEnter** is true for a single animator frame and is easy for OSC to miss.
+In the Scene view, turn on **Gizmos** so you can see the grab radius while you place it. It will not be visible in VRChat.
 
-## Expression parameters
+## 2. Add the PhysBone
 
-1. Open your **VRC Expression Parameters** asset.
-2. Add `WakeMe/Touched` as **Bool**.
-3. Leave **Synced** off (does not use the 256-bit sync budget).
-4. Leave **Saved** off.
+Select `WakeMeGrab` and **Add Component** → **VRC Phys Bone**. Set these fields:
 
-The name must match the contact parameter exactly, including the slash. VRChat then includes it in the OSC config it generates for the avatar.
+| Field | Value |
+| --- | --- |
+| Root Transform | `WakeMeGrab` |
+| Radius | `0.12` (invisible grab size, in meters) |
+| Immobile | `1` |
+| Gravity | `0` |
+| Allow Grabbing | On |
+| Allow Posing | Off |
+| Allow Collision | Off |
+| Parameter | `grabbed` |
 
-## Upload and enable OSC
+VRChat always names the grab flag `{Parameter}_IsGrabbed`. With Parameter `grabbed`, that flag is `grabbed_IsGrabbed`. That is the only parameter the app uses.
+
+## 3. Add the expression parameter
+
+1. Open your avatar’s **VRC Expression Parameters** asset.
+2. Add one **Bool** named `grabbed_IsGrabbed` (copy that name exactly).
+3. Uncheck **Synced**.
+4. Uncheck **Saved**.
+
+Do not add a parameter named `grabbed`. PhysBone does not write to that name.
+
+## 4. Upload and test
 
 1. Upload the avatar and wear it in VRChat.
 2. Action Menu → **OSC** → **Enable**.
-3. Start VRCWakeMe. You should see a HUD notice that VRChat is sending OSC to VRCWakeMe.
-4. Arm the tray icon and have someone poke the contact (or test with a friend’s hand collider).
+3. Start VRCWakeMe and turn **Activated** on.
+4. Have someone **grab** the invisible point (grip, not a poke). They need to grab near where you parented `WakeMeGrab`.
 
-If the parameter never arrives, delete the generated OSC config for this avatar under `%LocalAppData%Low\VRChat\VRChat\OSC\` so VRChat regenerates it after you rejoin with the avatar.
-
-## Optional: grab handle instead of a poke
-
-Not required for v1. A PhysBone with parameter prefix `WakeMe` exposes `WakeMe_IsGrabbed`. That is a different OSC address; the app currently listens only to `WakeMe/Touched`. You can drive the same bool from a PhysBone grab with an animator parameter driver if you want a grabable charm.
+If nothing happens, delete this avatar’s generated OSC config under `%LocalAppData%Low\VRChat\VRChat\OSC\`, rejoin, and try again.

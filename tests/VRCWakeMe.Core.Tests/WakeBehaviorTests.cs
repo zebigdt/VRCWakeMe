@@ -128,12 +128,12 @@ public class OscTouchedTrackerTests
     {
         var tracker = new OscTouchedTracker();
 
-        Assert.False(tracker.Observe(OscAddresses.Touched, false));
-        Assert.True(tracker.Observe(OscAddresses.Touched, true));
-        Assert.False(tracker.Observe(OscAddresses.Touched, true));
-        Assert.False(tracker.Observe(OscAddresses.Touched, 1));
-        Assert.False(tracker.Observe(OscAddresses.Touched, false));
-        Assert.True(tracker.Observe(OscAddresses.Touched, 1.0f));
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, false));
+        Assert.True(tracker.Observe(OscAddresses.Grabbed, true));
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, true));
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, 1));
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, false));
+        Assert.True(tracker.Observe(OscAddresses.Grabbed, 1.0f));
     }
 
     [Fact]
@@ -141,7 +141,9 @@ public class OscTouchedTrackerTests
     {
         var tracker = new OscTouchedTracker();
         Assert.False(tracker.Observe("/avatar/parameters/Other", true));
-        Assert.True(tracker.Observe(OscAddresses.Touched, true));
+        Assert.False(tracker.Observe("/avatar/parameters/WakeMe/Touched", true));
+        Assert.False(tracker.Observe("/avatar/parameters/grabbed", true));
+        Assert.True(tracker.Observe(OscAddresses.Grabbed, true));
     }
 
     [Fact]
@@ -167,18 +169,18 @@ public class OscPacketParserTests
     [Fact]
     public void ParsesBoolTrue()
     {
-        var bytes = OscTestMessage.Write(OscAddresses.Touched, "T");
+        var bytes = OscTestMessage.Write(OscAddresses.Grabbed, "T");
         var messages = OscPacketParser.Parse(bytes);
 
         var message = Assert.Single(messages);
-        Assert.Equal(OscAddresses.Touched, message.Address);
+        Assert.Equal(OscAddresses.Grabbed, message.Address);
         Assert.Equal(true, message.FirstArgument);
     }
 
     [Fact]
     public void ParsesBoolFalse()
     {
-        var bytes = OscTestMessage.Write(OscAddresses.Touched, "F");
+        var bytes = OscTestMessage.Write(OscAddresses.Grabbed, "F");
         var message = Assert.Single(OscPacketParser.Parse(bytes));
         Assert.Equal(false, message.FirstArgument);
     }
@@ -188,7 +190,7 @@ public class OscPacketParserTests
     {
         var payload = new byte[4];
         BinaryPrimitives.WriteInt32BigEndian(payload, 1);
-        var bytes = OscTestMessage.Write(OscAddresses.Touched, "i", payload);
+        var bytes = OscTestMessage.Write(OscAddresses.Grabbed, "i", payload);
         var message = Assert.Single(OscPacketParser.Parse(bytes));
         Assert.Equal(1, message.FirstArgument);
     }
@@ -198,7 +200,7 @@ public class OscPacketParserTests
     {
         var payload = new byte[4];
         BinaryPrimitives.WriteSingleBigEndian(payload, 1f);
-        var bytes = OscTestMessage.Write(OscAddresses.Touched, "f", payload);
+        var bytes = OscTestMessage.Write(OscAddresses.Grabbed, "f", payload);
         var message = Assert.Single(OscPacketParser.Parse(bytes));
         Assert.Equal(1f, Assert.IsType<float>(message.FirstArgument));
     }
@@ -206,7 +208,7 @@ public class OscPacketParserTests
     [Fact]
     public void ParsesBundle()
     {
-        var inner = OscTestMessage.Write(OscAddresses.Touched, "T");
+        var inner = OscTestMessage.Write(OscAddresses.Grabbed, "T");
         var bundle = OscTestMessage.WriteBundle(inner);
         var message = Assert.Single(OscPacketParser.Parse(bundle));
         Assert.Equal(true, message.FirstArgument);

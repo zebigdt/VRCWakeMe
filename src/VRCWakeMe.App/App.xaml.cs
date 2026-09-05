@@ -21,7 +21,10 @@ public partial class App : System.Windows.Application
     private TrayIcon _tray = null!;
     private DispatcherTimer _timer = null!;
     private SettingsWindow? _settingsWindow;
-    private string _status = "Starting…";
+    private string _status = "Not linked with VRChat";
+    private bool _oscReady;
+    private bool _receivedOsc;
+    private int _connectionTick;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -34,6 +37,7 @@ public partial class App : System.Windows.Application
         }
 
         base.OnStartup(e);
+        AppTheme.Start();
 
         _store = new SettingsStore();
         _settings = _store.Load();
@@ -58,31 +62,35 @@ public partial class App : System.Windows.Application
 
             _query = new OscQueryHost();
             _query.Start(_osc.Port);
-            _status = $"OSCQuery as {OscQueryHost.ServiceName} — UDP {_osc.Port}, HTTP {_query.TcpPort}. VRChat should show a HUD notice when it starts sending.";
+            _oscReady = true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _status = $"OSC failed to start: {ex.Message}";
-            System.Windows.MessageBox.Show(_status, "VRCWakeMe");
+            _status = "Not linked with VRChat";
         }
 
         _tray = new TrayIcon();
-        _tray.ArmedChanged += armed =>
-        {
-            _settings.Armed = armed;
-            _wake.Armed = armed;
-            SaveSettings();
-        };
+        _tray.ArmedChanged += SetArmed;
         _tray.DismissRequested += () => _wake.Dismiss();
         _tray.OpenSettingsRequested += ShowSettings;
         _tray.ExitRequested += Shutdown;
         RefreshTray();
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-        _timer.Tick += (_, _) => _wake.Tick();
+        _timer.Tick += (_, _) =>
+        {
+            _wake.Tick();
+            _connectionTick++;
+            if (_connectionTick % 8 == 0)
+            {
+                RefreshConnectionStatus();
+            }
+        };
         _timer.Start();
 
         StartupRegistration.Apply(_settings.StartWithWindows);
+        RefreshConnectionStatus();
+        ShowSettings();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -94,18 +102,45 @@ public partial class App : System.Windows.Application
         _osc?.Dispose();
         _tray?.Dispose();
         _mutex?.Dispose();
+        AppTheme.Stop();
         base.OnExit(e);
     }
 
     private void OnOscMessage(OscMessage message)
     {
+        _receivedOsc = true;
+        RefreshConnectionStatus();
         if (_touched.Observe(message.Address, message.FirstArgument))
         {
             _wake.RequestWake("osc");
         }
     }
 
-    private void RefreshTray() => _tray.SetState(_wake.Armed, _wake.IsPlaying);
+    private void RefreshConnectionStatus()
+    {
+        var linked = _oscReady && (_receivedOsc || (_query?.IsVrChatAdvertised() ?? false));
+        var text = linked ? "Linked with VRChat" : "Not linked with VRChat";
+        if (text == _status)
+        {
+            return;
+        }
+
+        _status = text;
+        _settingsWindow?.SetStatus(text);
+    }
+
+    private void RefreshTray()
+    {
+        _tray.SetState(_wake.Armed, _wake.IsPlaying);
+        _settingsWindow?.SetArmed(_wake.Armed);
+    }
+
+    private void SetArmed(bool armed)
+    {
+        _settings.Armed = armed;
+        _wake.Armed = armed;
+        SaveSettings();
+    }
 
     private void ShowSettings()
     {
@@ -115,11 +150,21 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(
-            _settings,
-            _player.ListDevices(),
-            _status,
-            OnSettingsChanged);
+        try
+        {
+            _settingsWindow = new SettingsWindow(
+                _settings,
+                _player.ListDevices(),
+                _status,
+                _wake.Armed,
+                OnSettingsChanged,
+                SetArmed);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(ex.ToString(), "VRCWakeMe settings");
+            return;
+        }
         _settingsWindow.TestRequested += async () =>
         {
             try
@@ -139,7 +184,14 @@ public partial class App : System.Windows.Application
             }
         };
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        _settingsWindow.Show();
+        try
+        {
+            _settingsWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(ex.ToString(), "VRCWakeMe settings");
+        }
     }
 
     private void OnSettingsChanged()

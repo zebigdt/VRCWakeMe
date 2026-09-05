@@ -1,5 +1,6 @@
 using System.Net;
 using VRC.OSCQuery;
+using VRCWakeMe.Core;
 
 namespace VRCWakeMe.App.Osc;
 
@@ -35,10 +36,44 @@ internal sealed class OscQueryHost : IDisposable
             Attributes.AccessValues.WriteOnly,
             description: "Avatar id changes");
         _service.AddEndpoint<bool>(
-            "/avatar/parameters/WakeMe/Touched",
+            OscAddresses.Grabbed,
             Attributes.AccessValues.WriteOnly,
             new object[] { false },
-            "Wake contact from avatar");
+            "Wake grab from avatar");
+    }
+
+    public bool IsVrChatAdvertised()
+    {
+        if (_service is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            _service.RefreshServices();
+            return NamedVrchat(_service.GetOSCQueryServices()) || NamedVrchat(_service.GetOSCServices());
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool NamedVrchat(System.Collections.IEnumerable profiles)
+    {
+        foreach (var profile in profiles)
+        {
+            var name = profile.GetType().GetProperty("name")?.GetValue(profile) as string
+                       ?? profile.GetType().GetProperty("Name")?.GetValue(profile) as string
+                       ?? "";
+            if (name.Contains("VRChat", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void Dispose()
