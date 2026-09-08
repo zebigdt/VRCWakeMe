@@ -13,6 +13,9 @@
     <SolidColorBrush x:Key="ControlBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="ControlBorderBrush" Color="#D0D0D0"/>
     <SolidColorBrush x:Key="ReadOnlyControlBrush" Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#C42B1C"/>
+    <SolidColorBrush x:Key="DangerHoverBrush" Color="#A32217"/>
+    <SolidColorBrush x:Key="DangerTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="ArmedGreenBrush" Color="#168039"/>
     <SolidColorBrush x:Key="SwitchOffBrush" Color="#8A8A8A"/>
     <SolidColorBrush x:Key="SliderTrackBrush" Color="#C6C6C6"/>

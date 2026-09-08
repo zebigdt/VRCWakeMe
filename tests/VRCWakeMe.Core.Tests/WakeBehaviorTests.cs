@@ -28,7 +28,7 @@ public class WakeCoordinatorTests
     }
 
     [Fact]
-    public void FirstPoke_StartsAlarm()
+    public void FirstGrab_StartsAlarm()
     {
         var wake = Create();
         var started = 0;
@@ -42,7 +42,7 @@ public class WakeCoordinatorTests
     }
 
     [Fact]
-    public void SecondPokeWhilePlaying_IsAlreadyPlaying()
+    public void SecondGrabWhilePlaying_IsAlreadyPlaying()
     {
         var wake = Create();
         var t0 = DateTimeOffset.UnixEpoch;
@@ -54,7 +54,7 @@ public class WakeCoordinatorTests
     }
 
     [Fact]
-    public void PokeDuringCooldownAfterDismiss_IsOnCooldown()
+    public void GrabDuringCooldownAfterDismiss_IsOnCooldown()
     {
         var wake = Create();
         var t0 = DateTimeOffset.UnixEpoch;
@@ -68,7 +68,7 @@ public class WakeCoordinatorTests
     }
 
     [Fact]
-    public void PokeAfterCooldown_StartsAgain()
+    public void GrabAfterCooldown_StartsAgain()
     {
         var wake = Create();
         var t0 = DateTimeOffset.UnixEpoch;
@@ -121,29 +121,122 @@ public class WakeCoordinatorTests
     }
 }
 
-public class OscTouchedTrackerTests
+public class OscGrabTrackerTests
 {
     [Fact]
-    public void RisingEdge_TriggersOnceWhileHeld()
+    public void GrabWithoutStretchParameter_WakesOnRisingEdge()
     {
-        var tracker = new OscTouchedTracker();
+        var tracker = new OscGrabTracker();
 
-        Assert.False(tracker.Observe(OscAddresses.Grabbed, false));
-        Assert.True(tracker.Observe(OscAddresses.Grabbed, true));
-        Assert.False(tracker.Observe(OscAddresses.Grabbed, true));
-        Assert.False(tracker.Observe(OscAddresses.Grabbed, 1));
-        Assert.False(tracker.Observe(OscAddresses.Grabbed, false));
-        Assert.True(tracker.Observe(OscAddresses.Grabbed, 1.0f));
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, false).Wake);
+        Assert.True(tracker.Observe(OscAddresses.Grabbed, true).Wake);
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, true).Wake);
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, false).Wake);
+        Assert.True(tracker.Observe(OscAddresses.Grabbed, 1.0f).Wake);
     }
 
     [Fact]
-    public void OtherAddresses_AreIgnored()
+    public void GrabWithoutPull_DoesNotWake()
     {
-        var tracker = new OscTouchedTracker();
-        Assert.False(tracker.Observe("/avatar/parameters/Other", true));
-        Assert.False(tracker.Observe("/avatar/parameters/WakeMe/Touched", true));
-        Assert.False(tracker.Observe("/avatar/parameters/grabbed", true));
-        Assert.True(tracker.Observe(OscAddresses.Grabbed, true));
+        var tracker = new OscGrabTracker();
+        tracker.Observe(OscAddresses.Stretch, 0f);
+
+        var grab = tracker.Observe(OscAddresses.Grabbed, true);
+
+        Assert.True(grab.Grabbed);
+        Assert.False(grab.Pulled);
+        Assert.False(grab.Wake);
+        Assert.True(tracker.AnyGrabbed);
+        Assert.False(tracker.AnyPulled);
+    }
+
+    [Fact]
+    public void PullWhileGrabbed_WakesOnce()
+    {
+        var tracker = new OscGrabTracker();
+        tracker.Observe(OscAddresses.Stretch, 0f);
+        tracker.Observe(OscAddresses.Grabbed, true);
+
+        Assert.False(tracker.Observe(OscAddresses.Stretch, 0.1f).Wake);
+        Assert.True(tracker.Observe(OscAddresses.Stretch, 0.4f).Wake);
+        Assert.True(tracker.AnyPulled);
+        Assert.False(tracker.Observe(OscAddresses.Stretch, 0.9f).Wake);
+
+        var released = tracker.Observe(OscAddresses.Grabbed, false);
+        Assert.True(released.Changed);
+        Assert.False(released.Pulled);
+        Assert.False(tracker.AnyGrabbed);
+        Assert.False(tracker.AnyPulled);
+    }
+
+    [Fact]
+    public void RegrabAfterAPull_NeedsANewPull()
+    {
+        var tracker = new OscGrabTracker();
+        tracker.Observe(OscAddresses.Stretch, 0f);
+        tracker.Observe(OscAddresses.Grabbed, true);
+        Assert.True(tracker.Observe(OscAddresses.Stretch, 0.5f).Wake);
+        tracker.Observe(OscAddresses.Grabbed, false);
+
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, true).Wake);
+        Assert.True(tracker.Observe(OscAddresses.Stretch, 0.5f).Wake);
+    }
+
+    [Fact]
+    public void StretchWithoutGrab_DoesNotWake()
+    {
+        var tracker = new OscGrabTracker();
+
+        var stretched = tracker.Observe(OscAddresses.Stretch, 1f);
+
+        Assert.True(stretched.IsHandle);
+        Assert.False(stretched.Wake);
+        Assert.False(tracker.AnyPulled);
+    }
+
+    [Fact]
+    public void PokesAndUnrelatedParameters_AreIgnored()
+    {
+        var tracker = new OscGrabTracker();
+
+        foreach (var address in new[]
+                 {
+                     "/avatar/parameters/Viseme",
+                     "/avatar/parameters/WakeMe",
+                     "/avatar/parameters/HeadContact",
+                     "/avatar/parameters/HeadTouch"
+                 })
+        {
+            var observed = tracker.Observe(address, true);
+            Assert.False(observed.IsHandle);
+            Assert.False(observed.Wake);
+        }
+
+        Assert.False(tracker.AnyGrabbed);
+    }
+
+    [Fact]
+    public void HandlesAreTrackedSeparately()
+    {
+        var tracker = new OscGrabTracker();
+        tracker.Observe(OscAddresses.Stretch, 0f);
+        tracker.Observe("/avatar/parameters/Hair_Stretch", 0.9f);
+
+        // The wake handle is held but never pulled, so its own grab stays quiet.
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, true).Pulled);
+
+        var hair = tracker.Observe("/avatar/parameters/Hair_IsGrabbed", true);
+        Assert.Equal("Hair", hair.Handle);
+        Assert.True(hair.Wake);
+    }
+
+    [Fact]
+    public void OscValue_AsFloat()
+    {
+        Assert.Equal(0f, OscValue.AsFloat(null));
+        Assert.Equal(1f, OscValue.AsFloat(true));
+        Assert.Equal(0.25f, OscValue.AsFloat(0.25f));
+        Assert.Equal(1f, OscValue.AsFloat(1));
     }
 
     [Fact]
@@ -213,6 +306,20 @@ public class OscPacketParserTests
         var message = Assert.Single(OscPacketParser.Parse(bundle));
         Assert.Equal(true, message.FirstArgument);
     }
+
+    [Fact]
+    public void Writer_RoundTripsBoolAndString()
+    {
+        var grabbed = Assert.Single(OscPacketParser.Parse(OscWriter.Write(OscAddresses.Grabbed, true)));
+        Assert.Equal(OscAddresses.Grabbed, grabbed.Address);
+        Assert.Equal(true, grabbed.FirstArgument);
+
+        var text = Assert.Single(OscPacketParser.Parse(OscWriter.Write("/test", "hello", true, false)));
+        Assert.Equal("/test", text.Address);
+        Assert.Equal("hello", text.Arguments[0]);
+        Assert.Equal(true, text.Arguments[1]);
+        Assert.Equal(false, text.Arguments[2]);
+    }
 }
 
 public class SettingsStoreTests
@@ -232,7 +339,7 @@ public class SettingsStoreTests
                 Volume = 0.4f,
                 OutputDeviceName = "Headset",
                 CustomSoundPath = @"C:\alarm.wav",
-                StartWithWindows = true
+                ForegroundOnAlarm = false
             };
 
             store.Save(settings);
@@ -244,7 +351,7 @@ public class SettingsStoreTests
             Assert.Equal(0.4f, loaded.Volume);
             Assert.Equal("Headset", loaded.OutputDeviceName);
             Assert.Equal(@"C:\alarm.wav", loaded.CustomSoundPath);
-            Assert.True(loaded.StartWithWindows);
+            Assert.False(loaded.ForegroundOnAlarm);
         }
         finally
         {

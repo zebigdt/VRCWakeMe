@@ -11,22 +11,29 @@
         TextElement.Foreground="{DynamicResource TextPrimaryBrush}">
     <StackPanel Margin="12">
         <Border Style="{StaticResource Card}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="ArmedTitle"
-                           Text="Activated"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           VerticalAlignment="Center"/>
-                <CheckBox x:Name="ArmedToggle"
-                          Grid.Column="1"
-                          Style="{StaticResource ToggleSwitch}"
-                          VerticalAlignment="Center"/>
-            </Grid>
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="ArmedTitle"
+                               Text="Activated"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <CheckBox x:Name="ArmedToggle"
+                              Grid.Column="1"
+                              Style="{StaticResource ToggleSwitch}"
+                              VerticalAlignment="Center"/>
+                </Grid>
+                <Button x:Name="DismissButton"
+                        Content="Dismiss alarm"
+                        Style="{StaticResource DangerButton}"
+                        Margin="0,12,0,0"
+                        IsEnabled="False"/>
+            </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Card}">
@@ -102,13 +109,18 @@
         </Border>
 
         <Grid>
-            <CheckBox x:Name="StartWithWindowsCheck"
-                      Content="Start with Windows"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <CheckBox x:Name="ForegroundCheck"
+                      Content="Bring to foreground on alarm"
+                      Margin="0,0,8,0"
                       VerticalAlignment="Center"/>
             <Button x:Name="TestButton"
+                    Grid.Column="1"
                     Content="Test alarm"
-                    Style="{StaticResource AccentButton}"
-                    HorizontalAlignment="Right"/>
+                    Style="{StaticResource AccentButton}"/>
         </Grid>
     </StackPanel>
 </Window>

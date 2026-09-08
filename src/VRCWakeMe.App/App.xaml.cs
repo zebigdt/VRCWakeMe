@@ -1,9 +1,6 @@
-﻿using System.Net;
-using System.Threading;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Threading;
 using VRCWakeMe.App.Audio;
-using VRCWakeMe.App.Osc;
 using VRCWakeMe.Core;
 
 namespace VRCWakeMe.App;
@@ -14,17 +11,14 @@ public partial class App : System.Windows.Application
     private SettingsStore _store = null!;
     private AppSettings _settings = null!;
     private WakeCoordinator _wake = null!;
-    private OscTouchedTracker _touched = null!;
+    private OscGrabTracker _grabs = null!;
     private AlarmPlayer _player = null!;
-    private UdpOscReceiver _osc = null!;
-    private OscQueryHost _query = null!;
+    private OscLink? _osc;
     private TrayIcon _tray = null!;
     private DispatcherTimer _timer = null!;
     private SettingsWindow? _settingsWindow;
     private string _status = "Not linked with VRChat";
-    private bool _oscReady;
-    private bool _receivedOsc;
-    private int _connectionTick;
+    private long _lastDebugMs;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -47,22 +41,27 @@ public partial class App : System.Windows.Application
             Cooldown = TimeSpan.FromSeconds(_settings.CooldownSeconds),
             MaxDuration = TimeSpan.FromSeconds(_settings.MaxDurationSeconds)
         };
-        _touched = new OscTouchedTracker();
+        _grabs = new OscGrabTracker();
         _player = new AlarmPlayer();
-
-        _wake.AlarmStarted += () => Dispatcher.BeginInvoke(() => _player.Play(_settings, loop: true));
+        _wake.AlarmStarted += () => Dispatcher.BeginInvoke(() =>
+        {
+            _player.Play(_settings, loop: true);
+            if (_settings.ForegroundOnAlarm) BringToForeground();
+        });
         _wake.AlarmStopped += () => Dispatcher.BeginInvoke(_player.Stop);
         _wake.StateChanged += () => Dispatcher.BeginInvoke(RefreshTray);
 
         try
         {
-            _osc = new UdpOscReceiver(IPAddress.Loopback);
+            _osc = OscLink.Start();
             _osc.MessageReceived += message => Dispatcher.BeginInvoke(() => OnOscMessage(message));
-            _osc.Start();
-
-            _query = new OscQueryHost();
-            _query.Start(_osc.Port);
-            _oscReady = true;
+            _osc.LinkChanged += () => Dispatcher.BeginInvoke(() =>
+            {
+                // Once VRChat stops sending, whatever the handle was last doing no
+                // longer holds, so it must not survive into the next link.
+                if (_osc?.IsLinked != true) _grabs.Reset();
+                RefreshConnectionStatus();
+            });
         }
         catch (Exception)
         {
@@ -80,15 +79,13 @@ public partial class App : System.Windows.Application
         _timer.Tick += (_, _) =>
         {
             _wake.Tick();
-            _connectionTick++;
-            if (_connectionTick % 8 == 0)
-            {
-                RefreshConnectionStatus();
-            }
+            _osc?.Tick();
+            RefreshConnectionStatus();
+            PushOscDebug(force: false);
         };
         _timer.Start();
 
-        StartupRegistration.Apply(_settings.StartWithWindows);
+        StartupRegistration.ClearLegacyEntry();
         RefreshConnectionStatus();
         ShowSettings();
     }
@@ -98,7 +95,6 @@ public partial class App : System.Windows.Application
         _timer?.Stop();
         _wake?.Dismiss();
         _player?.Dispose();
-        _query?.Dispose();
         _osc?.Dispose();
         _tray?.Dispose();
         _mutex?.Dispose();
@@ -108,31 +104,45 @@ public partial class App : System.Windows.Application
 
     private void OnOscMessage(OscMessage message)
     {
-        _receivedOsc = true;
         RefreshConnectionStatus();
-        if (_touched.Observe(message.Address, message.FirstArgument))
-        {
-            _wake.RequestWake("osc");
-        }
+        var grab = _grabs.Observe(message.Address, message.FirstArgument);
+        if (grab.IsHandle && grab.Changed) PushOscDebug(force: true);
+        if (grab.Wake) _wake.RequestWake("osc");
     }
 
     private void RefreshConnectionStatus()
     {
-        var linked = _oscReady && (_receivedOsc || (_query?.IsVrChatAdvertised() ?? false));
-        var text = linked ? "Linked with VRChat" : "Not linked with VRChat";
-        if (text == _status)
-        {
-            return;
-        }
-
+        var text = _osc?.IsLinked == true ? "Linked with VRChat" : "Not linked with VRChat";
+        if (text == _status) return;
         _status = text;
         _settingsWindow?.SetStatus(text);
+    }
+
+    private void PushOscDebug(bool force)
+    {
+        if (_osc is not { IsLinked: true }) return;
+        if (!force && Environment.TickCount64 - _lastDebugMs < 1000) return;
+        _lastDebugMs = Environment.TickCount64;
+        _osc.SendDebug(_wake.Armed, _grabs.AnyGrabbed, _grabs.AnyPulled);
     }
 
     private void RefreshTray()
     {
         _tray.SetState(_wake.Armed, _wake.IsPlaying);
         _settingsWindow?.SetArmed(_wake.Armed);
+        _settingsWindow?.SetAlarmPlaying(_wake.IsPlaying);
+    }
+
+    private void BringToForeground()
+    {
+        ShowSettings();
+        if (_settingsWindow is null) return;
+
+        // The state change that enables the button is queued behind this call, and
+        // WPF will not focus a disabled control, so sync it up front.
+        _settingsWindow.SetAlarmPlaying(_wake.IsPlaying);
+        WindowForeground.Bring(_settingsWindow);
+        _settingsWindow.FocusDismiss();
     }
 
     private void SetArmed(bool armed)
@@ -140,6 +150,7 @@ public partial class App : System.Windows.Application
         _settings.Armed = armed;
         _wake.Armed = armed;
         SaveSettings();
+        PushOscDebug(force: true);
     }
 
     private void ShowSettings()
@@ -153,64 +164,37 @@ public partial class App : System.Windows.Application
         try
         {
             _settingsWindow = new SettingsWindow(
-                _settings,
-                _player.ListDevices(),
-                _status,
-                _wake.Armed,
-                OnSettingsChanged,
-                SetArmed);
+                _settings, _player.ListDevices(), _status, _wake.Armed, OnSettingsChanged, SetArmed);
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(ex.ToString(), "VRCWakeMe settings");
             return;
         }
+
         _settingsWindow.TestRequested += async () =>
         {
-            try
-            {
-                await _player.PlayPreviewAsync(_settings, TimeSpan.FromSeconds(3));
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Could not play alarm: {ex.Message}", "VRCWakeMe");
-            }
-            finally
-            {
-                if (!_wake.IsPlaying)
-                {
-                    _player.Stop();
-                }
-            }
+            try { await _player.PlayPreviewAsync(_settings, TimeSpan.FromSeconds(3)); }
+            catch (Exception ex) { System.Windows.MessageBox.Show($"Could not play alarm: {ex.Message}", "VRCWakeMe"); }
+            finally { if (!_wake.IsPlaying) _player.Stop(); }
         };
+        _settingsWindow.DismissRequested += () => _wake.Dismiss();
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        try
-        {
-            _settingsWindow.Show();
-        }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show(ex.ToString(), "VRCWakeMe settings");
-        }
+        _settingsWindow.SetAlarmPlaying(_wake.IsPlaying);
+        try { _settingsWindow.Show(); }
+        catch (Exception ex) { System.Windows.MessageBox.Show(ex.ToString(), "VRCWakeMe settings"); }
     }
 
     private void OnSettingsChanged()
     {
         _wake.Cooldown = TimeSpan.FromSeconds(_settings.CooldownSeconds);
         _wake.MaxDuration = TimeSpan.FromSeconds(_settings.MaxDurationSeconds);
-        StartupRegistration.Apply(_settings.StartWithWindows);
         SaveSettings();
     }
 
     private void SaveSettings()
     {
-        try
-        {
-            _store.Save(_settings);
-        }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show($"Could not save settings: {ex.Message}", "VRCWakeMe");
-        }
+        try { _store.Save(_settings); }
+        catch (Exception ex) { System.Windows.MessageBox.Show($"Could not save settings: {ex.Message}", "VRCWakeMe"); }
     }
 }

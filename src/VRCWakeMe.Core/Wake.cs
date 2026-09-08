@@ -1,5 +1,18 @@
 namespace VRCWakeMe.Core;
 
+public enum WakeResult
+{
+    Started,
+    AlreadyPlaying,
+    Disarmed,
+    OnCooldown
+}
+
+public interface IWakeTrigger
+{
+    WakeResult RequestWake(string source);
+}
+
 public sealed class WakeCoordinator : IWakeTrigger
 {
     private readonly object _gate = new();
@@ -17,23 +30,13 @@ public sealed class WakeCoordinator : IWakeTrigger
 
     public bool Armed
     {
-        get
-        {
-            lock (_gate)
-            {
-                return _armed;
-            }
-        }
+        get { lock (_gate) return _armed; }
         set
         {
             var stopped = false;
             lock (_gate)
             {
-                if (_armed == value)
-                {
-                    return;
-                }
-
+                if (_armed == value) return;
                 _armed = value;
                 if (!value && _playing)
                 {
@@ -43,24 +46,14 @@ public sealed class WakeCoordinator : IWakeTrigger
                 }
             }
 
-            if (stopped)
-            {
-                AlarmStopped?.Invoke();
-            }
-
+            if (stopped) AlarmStopped?.Invoke();
             StateChanged?.Invoke();
         }
     }
 
     public bool IsPlaying
     {
-        get
-        {
-            lock (_gate)
-            {
-                return _playing;
-            }
-        }
+        get { lock (_gate) return _playing; }
     }
 
     public WakeResult RequestWake(string source) => RequestWake(source, DateTimeOffset.UtcNow);
@@ -70,21 +63,11 @@ public sealed class WakeCoordinator : IWakeTrigger
         _ = source;
         WakeResult result;
         var started = false;
-
         lock (_gate)
         {
-            if (!_armed)
-            {
-                result = WakeResult.Disarmed;
-            }
-            else if (_playing)
-            {
-                result = WakeResult.AlreadyPlaying;
-            }
-            else if (_lastStartUtc is { } last && nowUtc - last < Cooldown)
-            {
-                result = WakeResult.OnCooldown;
-            }
+            if (!_armed) result = WakeResult.Disarmed;
+            else if (_playing) result = WakeResult.AlreadyPlaying;
+            else if (_lastStartUtc is { } last && nowUtc - last < Cooldown) result = WakeResult.OnCooldown;
             else
             {
                 _playing = true;
@@ -109,11 +92,7 @@ public sealed class WakeCoordinator : IWakeTrigger
         var stopped = false;
         lock (_gate)
         {
-            if (!_playing)
-            {
-                return;
-            }
-
+            if (!_playing) return;
             _playing = false;
             _stopAtUtc = null;
             stopped = true;

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -11,7 +11,7 @@
     <AssemblyName>VRCWakeMe</AssemblyName>
     <RootNamespace>VRCWakeMe.App</RootNamespace>
     <Product>VRCWakeMe</Product>
-    <Description>Play a loud alarm when someone pokes your VRChat avatar.</Description>
+    <Description>Play a loud alarm when someone grabs and pulls the handle on your VRChat avatar.</Description>
     <Version>1.0.0</Version>
   </PropertyGroup>
 
@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MeaMod.DNS" Version="1.0.71" />
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
   </ItemGroup>
 
   <ItemGroup>

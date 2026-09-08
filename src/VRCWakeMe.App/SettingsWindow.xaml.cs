@@ -45,14 +45,15 @@ public partial class SettingsWindow : Window
             Persist();
         };
         TestButton.Click += (_, _) => TestRequested?.Invoke();
+        DismissButton.Click += (_, _) => DismissRequested?.Invoke();
         DeviceCombo.SelectionChanged += (_, _) => Persist();
         VolumeSlider.ValueChanged += (_, _) =>
         {
             VolumeLabel.Text = $"{(int)VolumeSlider.Value}%";
             Persist();
         };
-        StartWithWindowsCheck.Checked += (_, _) => Persist();
-        StartWithWindowsCheck.Unchecked += (_, _) => Persist();
+        ForegroundCheck.Checked += (_, _) => Persist();
+        ForegroundCheck.Unchecked += (_, _) => Persist();
         ArmedToggle.Checked += (_, _) => OnArmedToggle(true);
         ArmedToggle.Unchecked += (_, _) => OnArmedToggle(false);
 
@@ -60,8 +61,13 @@ public partial class SettingsWindow : Window
     }
 
     public event Action? TestRequested;
+    public event Action? DismissRequested;
 
     public void SetStatus(string text) => StatusText.Text = text;
+
+    public void SetAlarmPlaying(bool playing) => DismissButton.IsEnabled = playing;
+
+    public void FocusDismiss() => DismissButton.Focus();
 
     public void SetArmed(bool armed)
     {
@@ -90,7 +96,7 @@ public partial class SettingsWindow : Window
         MaxDurationBox.Text = _settings.MaxDurationSeconds.ToString();
         _customSoundPath = _settings.CustomSoundPath;
         RefreshSoundUi();
-        StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
+        ForegroundCheck.IsChecked = _settings.ForegroundOnAlarm;
         ArmedToggle.IsChecked = armed;
         UpdateArmedLabel(armed);
         _loading = false;
@@ -153,7 +159,7 @@ public partial class SettingsWindow : Window
         _settings.CooldownSeconds = NumericTextBox.Read(CooldownBox, _settings.CooldownSeconds, MinSeconds, MaxSeconds);
         _settings.MaxDurationSeconds = NumericTextBox.Read(MaxDurationBox, _settings.MaxDurationSeconds, MinSeconds, MaxSeconds);
         _settings.CustomSoundPath = _customSoundPath;
-        _settings.StartWithWindows = StartWithWindowsCheck.IsChecked == true;
+        _settings.ForegroundOnAlarm = ForegroundCheck.IsChecked == true;
         _settings.Clamp();
         _onChanged();
     }
