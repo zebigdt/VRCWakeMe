@@ -4,7 +4,7 @@ VRCWakeMe needs a grabbable **VRC PhysBone** handle on the avatar you sleep in. 
 
 A poke does nothing, and that is the point: a hand brushing past you while you sleep cannot start the alarm. It takes a grip and a tug.
 
-This page builds the handle by hand. If you would rather not, the [prefab](../README.md#avatar-setup) does steps 1 to 3 for you in one menu click; come back here for [Upload and check](#4-upload-and-check) and the troubleshooting below.
+This page builds the handle by hand. If you would rather not, import `VRCWakeMe-Avatar.unitypackage` from the [release zip](../README.md#install) and use **Tools → VRCWakeMe → Add wake handle to avatar** — that does steps 1 to 3 for you. Come back here for [Upload and check](#4-upload-and-check) and the troubleshooting below.
 
 ## See it in VRChat
 

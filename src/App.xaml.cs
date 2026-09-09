@@ -1,9 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Threading;
-using VRCWakeMe.App.Audio;
-using VRCWakeMe.Core;
 
-namespace VRCWakeMe.App;
+namespace VRCWakeMe;
 
 public partial class App : System.Windows.Application
 {

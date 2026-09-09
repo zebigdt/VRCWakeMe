@@ -1,8 +1,7 @@
 using NAudio.Wave;
-using VRCWakeMe.Core;
-using IOPath = System.IO.Path;
+using System.IO;
 
-namespace VRCWakeMe.App.Audio;
+namespace VRCWakeMe;
 
 public sealed class AudioDeviceOption(int number, string name)
 {
@@ -46,7 +45,7 @@ internal sealed class AlarmPlayer : IDisposable
     private LoopStream? _loop;
     private CancellationTokenSource? _previewCts;
 
-    public static string BundledAlarmPath => IOPath.Combine(AppContext.BaseDirectory, "Assets", "alarm.wav");
+    public static string BundledAlarmPath => Path.Combine(AppContext.BaseDirectory, "Assets", "alarm.wav");
 
     public IReadOnlyList<AudioDeviceOption> ListDevices()
     {

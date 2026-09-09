@@ -1,7 +1,8 @@
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace VRCWakeMe.Core;
+namespace VRCWakeMe;
 
 public sealed class AppSettings
 {

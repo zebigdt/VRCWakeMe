@@ -1,9 +1,7 @@
 using System.Windows;
-using VRCWakeMe.App.Audio;
-using VRCWakeMe.Core;
-using IOPath = System.IO.Path;
+using System.IO;
 
-namespace VRCWakeMe.App;
+namespace VRCWakeMe;
 
 public partial class SettingsWindow : Window
 {
@@ -122,8 +120,8 @@ public partial class SettingsWindow : Window
     {
         var usingCustom = !string.IsNullOrWhiteSpace(_customSoundPath);
         SoundNameBox.Text = usingCustom
-            ? IOPath.GetFileName(_customSoundPath)
-            : IOPath.GetFileName(AlarmPlayer.BundledAlarmPath);
+            ? Path.GetFileName(_customSoundPath)
+            : Path.GetFileName(AlarmPlayer.BundledAlarmPath);
         ClearSoundButton.Visibility = usingCustom ? Visibility.Visible : Visibility.Collapsed;
     }
 

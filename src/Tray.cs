@@ -8,7 +8,7 @@ using System.Windows.Media.Imaging;
 using Color = System.Drawing.Color;
 using Pen = System.Drawing.Pen;
 
-namespace VRCWakeMe.App;
+namespace VRCWakeMe;
 
 internal static class SleepIcons
 {

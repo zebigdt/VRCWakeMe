@@ -3,9 +3,8 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using MeaMod.DNS.Multicast;
-using VRCWakeMe.Core;
 
-namespace VRCWakeMe.App;
+namespace VRCWakeMe;
 
 /// <summary>
 /// OSCQuery + UDP modeled on vr_asmr_petting: advertise a LAN IP over mDNS,

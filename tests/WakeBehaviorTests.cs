@@ -1,8 +1,7 @@
 using System.Buffers.Binary;
+using System.IO;
 using System.Text;
-using VRCWakeMe.Core;
-
-namespace VRCWakeMe.Core.Tests;
+namespace VRCWakeMe.Tests;
 
 public class WakeCoordinatorTests
 {

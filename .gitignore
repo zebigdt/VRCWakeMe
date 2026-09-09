@@ -25,12 +25,3 @@ unity/*.zip
 Thumbs.db
 Desktop.ini
 .DS_Store
-
-## Python leftovers
-__pycache__/
-*.pyc
-_tmp_inspect_chats.py
-
-##
-
-DESIGN.md

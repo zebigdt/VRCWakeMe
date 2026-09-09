@@ -1,4 +1,4 @@
-namespace VRCWakeMe.Core;
+namespace VRCWakeMe;
 
 public enum WakeResult
 {

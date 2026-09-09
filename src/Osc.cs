@@ -1,8 +1,9 @@
 using System.Buffers.Binary;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
-namespace VRCWakeMe.Core;
+namespace VRCWakeMe;
 
 public readonly record struct OscMessage(string Address, IReadOnlyList<object?> Arguments)
 {
