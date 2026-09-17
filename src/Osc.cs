@@ -26,6 +26,7 @@ public static class OscAddresses
     public const string Handle = "WakeMe";
     public const string Grabbed = Parameters + Handle + GrabbedSuffix;
     public const string Stretch = Parameters + Handle + StretchSuffix;
+    public const string AvatarChange = "/avatar/change";
     public const string DebugArmed = "/VRCWakeMe/armed";
     public const string DebugDisarmed = "/VRCWakeMe/disarmed";
     public const string DebugGrabbed = "/VRCWakeMe/grabbed";
@@ -59,65 +60,63 @@ public static class OscValue
 }
 
 /// <summary>
-/// Tracks PhysBone grab handles. A poke cannot move these, only a deliberate
-/// grip-grab, and when the handle also reports stretch the grab has to be pulled
-/// before it counts as a wake. That is what keeps a brush past the avatar quiet.
+/// Tracks the WakeMe PhysBone only. Other bones (hair, tails, clothes) are
+/// ignored, a poke cannot move this handle, and when it reports stretch the grab
+/// has to be pulled before it counts as a wake.
 /// </summary>
 public sealed class OscGrabTracker
 {
     /// <summary>How far through the PhysBone's stretch range a pull has to reach.</summary>
     public const float PullThreshold = 0.15f;
 
-    private readonly Dictionary<string, Handle> _handles = new(StringComparer.Ordinal);
+    private Handle _handle;
 
-    public bool AnyGrabbed => _handles.Values.Any(handle => handle.Grabbed);
+    public bool AnyGrabbed => _handle.Grabbed;
 
-    public bool AnyPulled => _handles.Values.Any(handle => handle.Pulled);
+    public bool AnyPulled => _handle.Pulled;
 
     public OscGrab Observe(string address, object? value)
     {
-        if (!address.StartsWith(OscAddresses.Parameters, StringComparison.Ordinal)) return default;
+        if (address.Equals(OscAddresses.AvatarChange, StringComparison.Ordinal))
+        {
+            var changed = _handle.Grabbed || _handle.Pulled;
+            Reset();
+            return new OscGrab("", false, false, IsHandle: false, Changed: changed, Wake: false);
+        }
 
-        var name = address[OscAddresses.Parameters.Length..];
-        var isGrab = name.EndsWith(OscAddresses.GrabbedSuffix, StringComparison.Ordinal);
-        var isStretch = !isGrab && name.EndsWith(OscAddresses.StretchSuffix, StringComparison.Ordinal);
+        var isGrab = address.Equals(OscAddresses.Grabbed, StringComparison.Ordinal);
+        var isStretch = !isGrab && address.Equals(OscAddresses.Stretch, StringComparison.Ordinal);
         if (!isGrab && !isStretch) return default;
 
-        var suffix = isGrab ? OscAddresses.GrabbedSuffix : OscAddresses.StretchSuffix;
-        var handleName = name[..^suffix.Length];
-        if (handleName.Length == 0) return default;
-
-        _handles.TryGetValue(handleName, out var handle);
-        var wasGrabbed = handle.Grabbed;
-        var wasPulled = handle.Pulled;
+        var wasGrabbed = _handle.Grabbed;
+        var wasPulled = _handle.Pulled;
 
         if (isGrab)
         {
-            handle.Grabbed = OscValue.IsOn(value);
+            _handle.Grabbed = OscValue.IsOn(value);
 
             // A released bone springs back to rest, so drop the last stretch we saw
             // rather than letting a stale one count as the next grab's pull.
-            if (!handle.Grabbed) handle.Stretch = 0f;
+            if (!_handle.Grabbed) _handle.Stretch = 0f;
         }
         else
         {
-            handle.Stretch = OscValue.AsFloat(value);
-            handle.ReportsStretch = true;
+            _handle.Stretch = OscValue.AsFloat(value);
+            _handle.ReportsStretch = true;
         }
 
-        handle.Pulled = handle.Grabbed && (!handle.ReportsStretch || handle.Stretch >= PullThreshold);
-        _handles[handleName] = handle;
+        _handle.Pulled = _handle.Grabbed && (!_handle.ReportsStretch || _handle.Stretch >= PullThreshold);
 
         return new OscGrab(
-            handleName,
-            handle.Grabbed,
-            handle.Pulled,
+            OscAddresses.Handle,
+            _handle.Grabbed,
+            _handle.Pulled,
             IsHandle: true,
-            Changed: handle.Grabbed != wasGrabbed || handle.Pulled != wasPulled,
-            Wake: handle.Pulled && !wasPulled);
+            Changed: _handle.Grabbed != wasGrabbed || _handle.Pulled != wasPulled,
+            Wake: _handle.Pulled && !wasPulled);
     }
 
-    public void Reset() => _handles.Clear();
+    public void Reset() => _handle = default;
 
     private struct Handle
     {

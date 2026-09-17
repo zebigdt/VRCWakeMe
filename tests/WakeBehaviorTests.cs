@@ -203,7 +203,11 @@ public class OscGrabTrackerTests
                      "/avatar/parameters/Viseme",
                      "/avatar/parameters/WakeMe",
                      "/avatar/parameters/HeadContact",
-                     "/avatar/parameters/HeadTouch"
+                     "/avatar/parameters/HeadTouch",
+                     "/avatar/parameters/Hair_IsGrabbed",
+                     "/avatar/parameters/Hair_Stretch",
+                     "/avatar/parameters/Tail_IsGrabbed",
+                     "/avatar/parameters/Tail_Stretch"
                  })
         {
             var observed = tracker.Observe(address, true);
@@ -215,18 +219,33 @@ public class OscGrabTrackerTests
     }
 
     [Fact]
-    public void HandlesAreTrackedSeparately()
+    public void OtherPhysBones_DoNotWake()
     {
         var tracker = new OscGrabTracker();
         tracker.Observe(OscAddresses.Stretch, 0f);
         tracker.Observe("/avatar/parameters/Hair_Stretch", 0.9f);
+        tracker.Observe("/avatar/parameters/Hair_IsGrabbed", true);
 
-        // The wake handle is held but never pulled, so its own grab stays quiet.
-        Assert.False(tracker.Observe(OscAddresses.Grabbed, true).Pulled);
+        Assert.False(tracker.AnyGrabbed);
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, true).Wake);
+        Assert.False(tracker.AnyPulled);
+    }
 
-        var hair = tracker.Observe("/avatar/parameters/Hair_IsGrabbed", true);
-        Assert.Equal("Hair", hair.Handle);
-        Assert.True(hair.Wake);
+    [Fact]
+    public void AvatarChange_ClearsHandle()
+    {
+        var tracker = new OscGrabTracker();
+        tracker.Observe(OscAddresses.Grabbed, true);
+        Assert.True(tracker.AnyGrabbed);
+
+        var changed = tracker.Observe(OscAddresses.AvatarChange, "avtr_other");
+        Assert.True(changed.Changed);
+        Assert.False(changed.Wake);
+        Assert.False(tracker.AnyGrabbed);
+        Assert.False(tracker.AnyPulled);
+
+        Assert.True(tracker.Observe(OscAddresses.Grabbed, true).Wake);
+        Assert.False(tracker.Observe(OscAddresses.Grabbed, true).Wake);
     }
 
     [Fact]

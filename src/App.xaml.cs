@@ -104,7 +104,7 @@ public partial class App : System.Windows.Application
     {
         RefreshConnectionStatus();
         var grab = _grabs.Observe(message.Address, message.FirstArgument);
-        if (grab.IsHandle && grab.Changed) PushOscDebug(force: true);
+        if (grab.Changed) PushOscDebug(force: true);
         if (grab.Wake) _wake.RequestWake("osc");
     }
 

@@ -49,9 +49,9 @@ The OSC protocol and the trigger rule. No UI, no sockets — this is the part th
 | --- | --- |
 | `OscMessage` | An address plus its arguments, with `FirstArgument` for the common case |
 | `OscGrab` | The result of observing one parameter: handle name, grabbed, pulled, whether it was a handle at all, whether state changed, and whether it should wake you |
-| `OscAddresses` | The address constants: the `/avatar/parameters/` prefix, the `_IsGrabbed` and `_Stretch` suffixes, the `WakeMe` handle, and the four `/VRCWakeMe/...` debug tiles |
+| `OscAddresses` | The address constants: the `/avatar/parameters/` prefix, the `_IsGrabbed` and `_Stretch` suffixes, the `WakeMe` handle, `/avatar/change`, and the four `/VRCWakeMe/...` debug tiles |
 | `OscValue` | `IsOn` and `AsFloat`, which turn whatever VRChat sent (bool, int, float, string) into a usable value |
-| `OscGrabTracker` | Holds per-handle grab and stretch state. `Observe` returns the rising edge of "grabbed and pulled past `PullThreshold`", `AnyGrabbed` and `AnyPulled` drive the debug tiles, `Reset` forgets everything when the link drops |
+| `OscGrabTracker` | Tracks only `WakeMe_IsGrabbed` and `WakeMe_Stretch`. `Observe` returns the rising edge of "grabbed and pulled past `PullThreshold`", `AnyGrabbed` and `AnyPulled` drive the debug tiles, `Reset` forgets everything when the link drops or the avatar changes |
 | `OscWriter` | Builds outgoing packets: `Write` plus the padded string and big-endian number helpers |
 | `OscPacketParser` | `Parse` for incoming packets, handling bundles, and the argument readers for the tags VRChat uses |
 
@@ -131,7 +131,7 @@ Colour brushes for each theme, including the danger brushes the dismiss button u
 | Class | Covers |
 | --- | --- |
 | `WakeCoordinatorTests` | Arming, first wake, duplicate wakes while playing, cooldown before and after it expires, the max-duration cutoff, disarming mid-alarm, and the shared trigger hook |
-| `OscGrabTrackerTests` | Grab with no stretch parameter, grab without a pull, pull while grabbed, needing a fresh pull after a re-grab, stretch with no grab, pokes and unrelated parameters being ignored, separate handles, and the `OscValue` conversions |
+| `OscGrabTrackerTests` | Grab with no stretch parameter, grab without a pull, pull while grabbed, needing a fresh pull after a re-grab, stretch with no grab, pokes and other PhysBones being ignored, avatar change clearing the handle, and the `OscValue` conversions |
 | `OscPacketParserTests` | Bools, ints, floats, bundles, and a writer round trip |
 | `SettingsStoreTests` | Settings surviving a save and load |
 
