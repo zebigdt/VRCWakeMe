@@ -8,11 +8,17 @@ public partial class SettingsWindow : Window
     private const int MinSeconds = 1;
     private const int MaxSeconds = 600;
 
+    private static readonly System.Windows.Media.Geometry ExpandDown =
+        System.Windows.Media.Geometry.Parse("M 0 0 L 6 6 L 12 0");
+    private static readonly System.Windows.Media.Geometry ExpandUp =
+        System.Windows.Media.Geometry.Parse("M 0 6 L 6 0 L 12 6");
+
     private readonly AppSettings _settings;
     private readonly Action _onChanged;
     private readonly Action<bool> _onArmedChanged;
     private string? _customSoundPath;
     private bool _loading;
+    private bool _expanded;
 
     public SettingsWindow(
         AppSettings settings,
@@ -32,8 +38,8 @@ public partial class SettingsWindow : Window
         DeviceCombo.ItemsSource = devices;
         StatusText.Text = statusText;
 
-        BindStepper(CooldownBox, CooldownUp, CooldownDown);
-        BindStepper(MaxDurationBox, DurationUp, DurationDown);
+        BindStepper(CooldownBox, CooldownPlus, CooldownMinus);
+        BindStepper(MaxDurationBox, DurationPlus, DurationMinus);
 
         BrowseSoundButton.Click += (_, _) => BrowseSound();
         ClearSoundButton.Click += (_, _) =>
@@ -62,6 +68,7 @@ public partial class SettingsWindow : Window
         ArmedToggle.Unchecked += (_, _) => OnArmedToggle(false);
 
         LoadFromSettings(devices, armed);
+        ApplyExpanded(false);
     }
 
     public event Action? TestRequested;
@@ -86,11 +93,23 @@ public partial class SettingsWindow : Window
         _loading = false;
     }
 
-    private void BindStepper(System.Windows.Controls.TextBox box, System.Windows.Controls.Primitives.RepeatButton up, System.Windows.Controls.Primitives.RepeatButton down)
+    private void OnExpandClick(object sender, RoutedEventArgs e) => ApplyExpanded(!_expanded);
+
+    private void ApplyExpanded(bool expanded)
+    {
+        _expanded = expanded;
+        DetailsPanel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        ExpandArrow.Data = expanded ? ExpandUp : ExpandDown;
+    }
+
+    private void BindStepper(
+        System.Windows.Controls.TextBox box,
+        System.Windows.Controls.Primitives.RepeatButton plus,
+        System.Windows.Controls.Primitives.RepeatButton minus)
     {
         NumericTextBox.Attach(box, Persist, MinSeconds, MaxSeconds);
-        up.Click += (_, _) => NumericTextBox.Nudge(box, 1, MinSeconds, MaxSeconds, Persist);
-        down.Click += (_, _) => NumericTextBox.Nudge(box, -1, MinSeconds, MaxSeconds, Persist);
+        plus.Click += (_, _) => NumericTextBox.Nudge(box, 1, MinSeconds, MaxSeconds, Persist);
+        minus.Click += (_, _) => NumericTextBox.Nudge(box, -1, MinSeconds, MaxSeconds, Persist);
     }
 
     private void LoadFromSettings(IReadOnlyList<AudioDeviceOption> devices, bool armed)

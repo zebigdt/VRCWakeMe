@@ -95,7 +95,6 @@ public partial class App : System.Windows.Application
         _timer.Tick += (_, _) =>
         {
             _wake.Tick();
-            _osc?.Tick();
             RefreshConnectionStatus();
             PushOscDebug(force: false);
         };
@@ -138,10 +137,13 @@ public partial class App : System.Windows.Application
 
     private void PushOscDebug(bool force)
     {
-        if (_osc is not { IsLinked: true }) return;
+        if (_osc is not { IsLinked: true } osc) return;
         if (!force && Environment.TickCount64 - _lastDebugMs < 1000) return;
         _lastDebugMs = Environment.TickCount64;
-        _osc.SendDebug(_wake.Armed, _grabs.AnyGrabbed, _grabs.AnyPulled);
+        var armed = _wake.Armed;
+        var grabbed = _grabs.AnyGrabbed;
+        var pulled = _grabs.AnyPulled;
+        _ = Task.Run(() => osc.SendDebug(armed, grabbed, pulled));
     }
 
     private bool AlarmAudible => _wake.IsPlaying || _testing;

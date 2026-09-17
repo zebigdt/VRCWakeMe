@@ -32,7 +32,7 @@ The whole app: WPF plus Windows Forms (for the tray icon), targeting `net8.0-win
 
 ### `SettingsWindow.xaml` / `SettingsWindow.xaml.cs`
 
-`SettingsWindow` — the only window. Active/Inactive switch, large dismiss button, output device, volume, cooldown, duration, custom sound, the foreground and disarm-after-dismiss checkboxes, and the test button.
+`SettingsWindow` — the only window. Collapsed by default to Active/Inactive, dismiss, and link status; a wide arrow button expands the rest (device, volume, steppers, sound, options, test).
 
 | Member | Does |
 | --- | --- |

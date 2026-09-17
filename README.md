@@ -40,10 +40,11 @@ Want to build the handle by hand, or the overlay is empty after upload? [docs/av
 
 - **Active / Inactive** — grabs play the alarm while Active. Switch to Inactive when you are awake.
 - **Dismiss alarm** — the large button under the switch, or the same item in the tray menu. It stops a real alarm and a test alarm. Greyed out unless sound is playing.
+- The link status under Dismiss shows whether VRChat is talking to the app.
+- The wide button with the arrow expands the window for the rest of the settings (output device, volume, cooldown, duration, sound, and the options below).
 - **Bring to foreground on alarm** — when the alarm starts, the window pops in front of whatever you are doing and focuses the dismiss button, so you can stop it with one click or the spacebar. On by default.
 - **Disactivate after dismissing alarm** — after you dismiss an alarm (including a test), the switch flips to Inactive so another grab cannot start it again until you turn it back on.
 - **Test alarm** — plays the sound for the same number of seconds as **Duration**, or until you hit Dismiss alarm. Does not wait for a grab.
-- **Settings** — output device (pick your headset), volume, cooldown, duration, custom sound.
 - Left-click the tray icon to open settings.
 
 Action Menu → **OSC → OSC Debug** shows four tiles — `armed`, `disarmed`, `grabbed`, `pulled`. The ones matching the current state keep flashing.

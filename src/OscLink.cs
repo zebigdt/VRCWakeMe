@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using MeaMod.DNS.Multicast;
 
 namespace VRCWakeMe;
@@ -82,33 +83,60 @@ internal sealed class OscLink : IDisposable
         var httpPort = ((IPEndPoint)http.LocalEndpoint).Port;
 
         var profile = new ServiceProfile(ServiceName, OscJsonService, (ushort)httpPort, [lanIp]);
-        var mdns = new MulticastService { UseIpv6 = false, IgnoreDuplicateMessages = true };
-        mdns.Start();
-        var discovery = new ServiceDiscovery(mdns);
-        discovery.Advertise(profile);
-        TryAnnounce(discovery, profile);
+        // MeaMod.DNS posts completions to the captured sync context. Starting it
+        // from the WPF UI thread makes every mDNS packet stall the dispatcher.
+        var previousContext = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(null);
+        MulticastService mdns;
+        ServiceDiscovery discovery;
+        try
+        {
+            mdns = new MulticastService { UseIpv6 = false, IgnoreDuplicateMessages = true };
+            mdns.Start();
+            discovery = new ServiceDiscovery(mdns);
+            discovery.Advertise(profile);
+            TryAnnounce(discovery, profile);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+        }
 
         var link = new OscLink(udp, fallback, http, oscPort, mdns, discovery, profile);
         link._lastAnnounceMs = Environment.TickCount64;
         link._tasks.Add(Task.Run(() => link.ReceiveLoopAsync(udp, link._cts.Token)));
         if (fallback != null) link._tasks.Add(Task.Run(() => link.ReceiveLoopAsync(fallback, link._cts.Token)));
         link._tasks.Add(Task.Run(() => link.HttpLoopAsync(link._cts.Token)));
+        link._tasks.Add(Task.Run(() => link.MaintenanceLoopAsync(link._cts.Token)));
         return link;
     }
 
     public void Tick()
     {
-        var linked = IsLinked;
-        if (linked != _wasLinked)
-        {
-            _wasLinked = linked;
-            if (!linked) _primedDebug = false;
-            LinkChanged?.Invoke();
-        }
+        RefreshLinkState();
+    }
 
-        if (linked || Environment.TickCount64 - _lastAnnounceMs < 5000) return;
-        _lastAnnounceMs = Environment.TickCount64;
-        TryAnnounce(_discovery, _profile);
+    private async Task MaintenanceLoopAsync(CancellationToken cancel)
+    {
+        while (!cancel.IsCancellationRequested)
+        {
+            try { await Task.Delay(500, cancel).ConfigureAwait(false); }
+            catch (OperationCanceledException) { return; }
+
+            RefreshLinkState();
+            if (IsLinked || Environment.TickCount64 - _lastAnnounceMs < 5000) continue;
+            _lastAnnounceMs = Environment.TickCount64;
+            TryAnnounce(_discovery, _profile);
+        }
+    }
+
+    private void RefreshLinkState()
+    {
+        var linked = IsLinked;
+        if (linked == _wasLinked) return;
+        _wasLinked = linked;
+        if (!linked) _primedDebug = false;
+        LinkChanged?.Invoke();
     }
 
     /// <summary>
