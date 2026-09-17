@@ -59,11 +59,21 @@ internal static class WindowForeground
 
 internal static class NumericTextBox
 {
-    public static void Attach(System.Windows.Controls.TextBox box, Action onCommitted)
+    public static void Attach(System.Windows.Controls.TextBox box, Action onCommitted, int min, int max)
     {
         InputMethod.SetIsInputMethodEnabled(box, false);
         box.PreviewTextInput += (_, e) => e.Handled = !IsDigits(e.Text);
-        box.PreviewKeyDown += (_, e) => { if (e.Key is Key.Space) e.Handled = true; };
+        box.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key is Key.Space) e.Handled = true;
+            else if (e.Key is Key.Up) { Nudge(box, 1, min, max, onCommitted); e.Handled = true; }
+            else if (e.Key is Key.Down) { Nudge(box, -1, min, max, onCommitted); e.Handled = true; }
+        };
+        box.MouseWheel += (_, e) =>
+        {
+            Nudge(box, e.Delta > 0 ? 1 : -1, min, max, onCommitted);
+            e.Handled = true;
+        };
         System.Windows.DataObject.AddPastingHandler(box, (_, e) =>
         {
             if (!e.DataObject.GetDataPresent(System.Windows.DataFormats.Text) ||
@@ -86,6 +96,15 @@ internal static class NumericTextBox
         var clamped = Math.Clamp(value, min, max);
         box.Text = clamped.ToString();
         return clamped;
+    }
+
+    public static void Nudge(System.Windows.Controls.TextBox box, int delta, int min, int max, Action onCommitted)
+    {
+        if (!int.TryParse(box.Text, out var value)) value = delta > 0 ? min - 1 : min;
+        var next = Math.Clamp(value + delta, min, max);
+        if (box.Text == next.ToString()) return;
+        box.Text = next.ToString();
+        onCommitted();
     }
 
     private static bool IsDigits(string text)

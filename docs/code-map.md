@@ -28,7 +28,7 @@ The whole app: WPF plus Windows Forms (for the tray icon), targeting `net8.0-win
 | `DismissAlarm` | Stops a real or test alarm, and turns the switch Inactive when that setting is on |
 | `SetArmed` | Arms or disarms, then saves |
 | `ShowSettings` | Creates the settings window on demand, or re-shows the existing one |
-| `OnSettingsChanged`, `SaveSettings` | Applies edited settings to the live objects and writes them to disk |
+| `OnSettingsChanged`, `SaveSettings` | Applies edited settings immediately, then debounces the disk write onto a background thread so the UI stays responsive |
 
 ### `SettingsWindow.xaml` / `SettingsWindow.xaml.cs`
 
@@ -110,7 +110,7 @@ Small Windows-specific helpers.
 | --- | --- |
 | `StartupRegistration` | `ClearLegacyEntry` removes the old "Start with Windows" registry value from earlier versions |
 | `WindowForeground` | `Bring` raises and focuses a window from the tray, working around Windows' foreground restrictions |
-| `NumericTextBox` | `Attach` and `Read` keep the cooldown and duration boxes digits-only and inside their range |
+| `NumericTextBox` | `Attach`, `Nudge`, and `Read` keep the cooldown and duration boxes digits-only, steppable by one, and inside their range |
 | `AppTheme` | Follows the Windows light/dark setting and applies it to the window and title bar |
 
 ### `AssemblyInfo.cs`

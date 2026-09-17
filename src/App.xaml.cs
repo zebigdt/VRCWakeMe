@@ -18,6 +18,8 @@ public partial class App : System.Windows.Application
     private string _status = "Not linked with VRChat";
     private long _lastDebugMs;
     private bool _testing;
+    private CancellationTokenSource? _testCts;
+    private DispatcherTimer? _saveTimer;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -44,6 +46,7 @@ public partial class App : System.Windows.Application
         _player = new AlarmPlayer();
         _wake.AlarmStarted += () => Dispatcher.BeginInvoke(() =>
         {
+            StopTestTimer();
             _testing = false;
             _player.Play(_settings, loop: true);
             if (_settings.ForegroundOnAlarm) BringToForeground();
@@ -54,7 +57,20 @@ public partial class App : System.Windows.Application
         try
         {
             _osc = OscLink.Start();
-            _osc.MessageReceived += message => Dispatcher.BeginInvoke(() => OnOscMessage(message));
+            // VRChat streams a lot of avatar parameters. Only wake-handle traffic
+            // needs the UI thread; link status is watched by the 250 ms timer.
+            _osc.MessageReceived += message =>
+            {
+                var address = message.Address;
+                if (!address.Equals(OscAddresses.Grabbed, StringComparison.Ordinal) &&
+                    !address.Equals(OscAddresses.Stretch, StringComparison.Ordinal) &&
+                    !address.Equals(OscAddresses.AvatarChange, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                Dispatcher.BeginInvoke(() => OnOscMessage(message));
+            };
             _osc.LinkChanged += () => Dispatcher.BeginInvoke(() =>
             {
                 // Once VRChat stops sending, whatever the handle was last doing no
@@ -93,6 +109,8 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         _timer?.Stop();
+        StopTestTimer();
+        FlushSettings();
         _wake?.Dismiss();
         _player?.Dispose();
         _osc?.Dispose();
@@ -151,11 +169,33 @@ public partial class App : System.Windows.Application
     private void DismissAlarm()
     {
         var shouldDisarm = _settings.DisarmAfterDismiss && (_wake.IsPlaying || _testing);
+        StopTestTimer();
         _testing = false;
         _wake.Dismiss();
         _player.Stop();
         if (shouldDisarm) SetArmed(false);
         else RefreshTray();
+    }
+
+    private void StopTestTimer()
+    {
+        _testCts?.Cancel();
+        _testCts?.Dispose();
+        _testCts = null;
+    }
+
+    private async void EndTestAfterAsync(int seconds, CancellationToken token)
+    {
+        try { await Task.Delay(TimeSpan.FromSeconds(seconds), token).ConfigureAwait(false); }
+        catch (OperationCanceledException) { return; }
+
+        await Dispatcher.InvokeAsync(() =>
+        {
+            if (!_testing) return;
+            _testing = false;
+            if (!_wake.IsPlaying) _player.Stop();
+            RefreshTray();
+        });
     }
 
     private void SetArmed(bool armed)
@@ -188,10 +228,20 @@ public partial class App : System.Windows.Application
         _settingsWindow.TestRequested += () =>
         {
             if (_wake.IsPlaying) return;
+            StopTestTimer();
             _testing = true;
             try { _player.Play(_settings, loop: true); }
-            catch (Exception ex) { _testing = false; System.Windows.MessageBox.Show($"Could not play alarm: {ex.Message}", "VRCWakeMe"); }
+            catch (Exception ex)
+            {
+                _testing = false;
+                System.Windows.MessageBox.Show($"Could not play alarm: {ex.Message}", "VRCWakeMe");
+                RefreshTray();
+                return;
+            }
+
             RefreshTray();
+            _testCts = new CancellationTokenSource();
+            EndTestAfterAsync(_settings.MaxDurationSeconds, _testCts.Token);
         };
         _settingsWindow.DismissRequested += DismissAlarm;
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
@@ -209,7 +259,42 @@ public partial class App : System.Windows.Application
 
     private void SaveSettings()
     {
+        // Spinners and the volume slider fire Persist many times a second. Writing
+        // the file on the UI thread there makes every click feel stuck.
+        _saveTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _saveTimer.Tick -= OnSaveTimerTick;
+        _saveTimer.Tick += OnSaveTimerTick;
+        _saveTimer.Stop();
+        _saveTimer.Start();
+    }
+
+    private void OnSaveTimerTick(object? sender, EventArgs e)
+    {
+        _saveTimer?.Stop();
+        WriteSettingsAsync();
+    }
+
+    private void FlushSettings()
+    {
+        _saveTimer?.Stop();
         try { _store.Save(_settings); }
-        catch (Exception ex) { System.Windows.MessageBox.Show($"Could not save settings: {ex.Message}", "VRCWakeMe"); }
+        catch (Exception)
+        {
+        }
+    }
+
+    private void WriteSettingsAsync()
+    {
+        var snapshot = _settings.Clone();
+        var store = _store;
+        _ = Task.Run(() =>
+        {
+            try { store.Save(snapshot); }
+            catch (Exception ex)
+            {
+                Dispatcher.BeginInvoke(() =>
+                    System.Windows.MessageBox.Show($"Could not save settings: {ex.Message}", "VRCWakeMe"));
+            }
+        });
     }
 }

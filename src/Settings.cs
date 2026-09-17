@@ -21,6 +21,18 @@ public sealed class AppSettings
         MaxDurationSeconds = Math.Clamp(MaxDurationSeconds, 1, 600);
         Volume = Math.Clamp(Volume, 0.01f, 1f);
     }
+
+    public AppSettings Clone() => new()
+    {
+        Armed = Armed,
+        CooldownSeconds = CooldownSeconds,
+        MaxDurationSeconds = MaxDurationSeconds,
+        Volume = Volume,
+        OutputDeviceName = OutputDeviceName,
+        CustomSoundPath = CustomSoundPath,
+        ForegroundOnAlarm = ForegroundOnAlarm,
+        DisarmAfterDismiss = DisarmAfterDismiss
+    };
 }
 
 public sealed class SettingsStore

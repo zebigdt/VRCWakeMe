@@ -32,8 +32,8 @@ public partial class SettingsWindow : Window
         DeviceCombo.ItemsSource = devices;
         StatusText.Text = statusText;
 
-        NumericTextBox.Attach(CooldownBox, Persist);
-        NumericTextBox.Attach(MaxDurationBox, Persist);
+        BindStepper(CooldownBox, CooldownUp, CooldownDown);
+        BindStepper(MaxDurationBox, DurationUp, DurationDown);
 
         BrowseSoundButton.Click += (_, _) => BrowseSound();
         ClearSoundButton.Click += (_, _) =>
@@ -42,7 +42,11 @@ public partial class SettingsWindow : Window
             RefreshSoundUi();
             Persist();
         };
-        TestButton.Click += (_, _) => TestRequested?.Invoke();
+        TestButton.Click += (_, _) =>
+        {
+            Persist();
+            TestRequested?.Invoke();
+        };
         DismissButton.Click += (_, _) => DismissRequested?.Invoke();
         DeviceCombo.SelectionChanged += (_, _) => Persist();
         VolumeSlider.ValueChanged += (_, _) =>
@@ -80,6 +84,13 @@ public partial class SettingsWindow : Window
         ArmedToggle.IsChecked = armed;
         UpdateArmedLabel(armed);
         _loading = false;
+    }
+
+    private void BindStepper(System.Windows.Controls.TextBox box, System.Windows.Controls.Primitives.RepeatButton up, System.Windows.Controls.Primitives.RepeatButton down)
+    {
+        NumericTextBox.Attach(box, Persist, MinSeconds, MaxSeconds);
+        up.Click += (_, _) => NumericTextBox.Nudge(box, 1, MinSeconds, MaxSeconds, Persist);
+        down.Click += (_, _) => NumericTextBox.Nudge(box, -1, MinSeconds, MaxSeconds, Persist);
     }
 
     private void LoadFromSettings(IReadOnlyList<AudioDeviceOption> devices, bool armed)

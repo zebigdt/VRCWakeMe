@@ -72,12 +72,74 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Cooldown" Style="{StaticResource SectionLabel}"/>
-                        <TextBox x:Name="CooldownBox" MaxLength="3" InputMethod.IsInputMethodEnabled="False"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="CooldownBox" MaxLength="3" InputMethod.IsInputMethodEnabled="False"/>
+                            <Border Grid.Column="1"
+                                    Margin="4,0,0,0"
+                                    Background="{DynamicResource ControlBrush}"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <RepeatButton x:Name="CooldownUp" Grid.Row="0" Style="{StaticResource SpinnerButton}">
+                                        <Path Data="M 0 3 L 4 0 L 8 3"
+                                              Stroke="{DynamicResource TextSecondaryBrush}"
+                                              StrokeThickness="1.5"
+                                              Fill="Transparent"/>
+                                    </RepeatButton>
+                                    <RepeatButton x:Name="CooldownDown" Grid.Row="1" Style="{StaticResource SpinnerButton}">
+                                        <Path Data="M 0 0 L 4 3 L 8 0"
+                                              Stroke="{DynamicResource TextSecondaryBrush}"
+                                              StrokeThickness="1.5"
+                                              Fill="Transparent"/>
+                                    </RepeatButton>
+                                </Grid>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="Seconds before the alarm can go off again" Style="{StaticResource HintText}" Margin="0,4,0,0"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Duration" Style="{StaticResource SectionLabel}"/>
-                        <TextBox x:Name="MaxDurationBox" MaxLength="3" InputMethod.IsInputMethodEnabled="False"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="MaxDurationBox" MaxLength="3" InputMethod.IsInputMethodEnabled="False"/>
+                            <Border Grid.Column="1"
+                                    Margin="4,0,0,0"
+                                    Background="{DynamicResource ControlBrush}"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <RepeatButton x:Name="DurationUp" Grid.Row="0" Style="{StaticResource SpinnerButton}">
+                                        <Path Data="M 0 3 L 4 0 L 8 3"
+                                              Stroke="{DynamicResource TextSecondaryBrush}"
+                                              StrokeThickness="1.5"
+                                              Fill="Transparent"/>
+                                    </RepeatButton>
+                                    <RepeatButton x:Name="DurationDown" Grid.Row="1" Style="{StaticResource SpinnerButton}">
+                                        <Path Data="M 0 0 L 4 3 L 8 0"
+                                              Stroke="{DynamicResource TextSecondaryBrush}"
+                                              StrokeThickness="1.5"
+                                              Fill="Transparent"/>
+                                    </RepeatButton>
+                                </Grid>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="Seconds for the alarm to stop automatically" Style="{StaticResource HintText}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
