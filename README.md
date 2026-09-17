@@ -41,8 +41,8 @@ Want to build the handle by hand, or the overlay is empty after upload? [docs/av
 - **Active / Inactive** — grabs play the alarm while Active. Switch to Inactive when you are awake.
 - **Dismiss alarm** — the large button under the switch, or the same item in the tray menu. It stops a real alarm and a test alarm. Greyed out unless sound is playing.
 - **Bring to foreground on alarm** — when the alarm starts, the window pops in front of whatever you are doing and focuses the dismiss button, so you can stop it with one click or the spacebar. On by default.
-- **Disactivate after dismissing alarm** — after you dismiss a real alarm, the switch flips to Inactive so another grab cannot start it again until you turn it back on.
-- **Test alarm** — plays the sound on a loop until you hit Dismiss alarm. Does not wait for a grab and does not change Active / Inactive.
+- **Disactivate after dismissing alarm** — after you dismiss an alarm (including a test), the switch flips to Inactive so another grab cannot start it again until you turn it back on.
+- **Test alarm** — plays the sound on a loop until you hit Dismiss alarm. Does not wait for a grab.
 - **Settings** — output device (pick your headset), volume, cooldown, duration, custom sound.
 - Left-click the tray icon to open settings.
 

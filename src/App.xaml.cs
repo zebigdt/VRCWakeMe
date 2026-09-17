@@ -150,11 +150,11 @@ public partial class App : System.Windows.Application
 
     private void DismissAlarm()
     {
-        var wasWake = _wake.IsPlaying;
+        var shouldDisarm = _settings.DisarmAfterDismiss && (_wake.IsPlaying || _testing);
         _testing = false;
         _wake.Dismiss();
         _player.Stop();
-        if (wasWake && _settings.DisarmAfterDismiss) SetArmed(false);
+        if (shouldDisarm) SetArmed(false);
         else RefreshTray();
     }
 
