@@ -90,38 +90,46 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Cooldown" Style="{StaticResource SectionLabel}"/>
-                            <StackPanel Orientation="Horizontal">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
                                 <TextBox x:Name="CooldownBox"
-                                         Width="64"
                                          MaxLength="3"
                                          InputMethod.IsInputMethodEnabled="False"/>
                                 <RepeatButton x:Name="CooldownPlus"
+                                              Grid.Column="1"
                                               Content="+"
-                                              Style="{StaticResource StepButton}"
-                                              Margin="4,0,0,0"/>
+                                              Style="{StaticResource StepButton}"/>
                                 <RepeatButton x:Name="CooldownMinus"
+                                              Grid.Column="2"
                                               Content="−"
-                                              Style="{StaticResource StepButton}"
-                                              Margin="4,0,0,0"/>
-                            </StackPanel>
+                                              Style="{StaticResource StepButton}"/>
+                            </Grid>
                             <TextBlock Text="Seconds before the alarm can go off again" Style="{StaticResource HintText}" Margin="0,4,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Duration" Style="{StaticResource SectionLabel}"/>
-                            <StackPanel Orientation="Horizontal">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
                                 <TextBox x:Name="MaxDurationBox"
-                                         Width="64"
                                          MaxLength="3"
                                          InputMethod.IsInputMethodEnabled="False"/>
                                 <RepeatButton x:Name="DurationPlus"
+                                              Grid.Column="1"
                                               Content="+"
-                                              Style="{StaticResource StepButton}"
-                                              Margin="4,0,0,0"/>
+                                              Style="{StaticResource StepButton}"/>
                                 <RepeatButton x:Name="DurationMinus"
+                                              Grid.Column="2"
                                               Content="−"
-                                              Style="{StaticResource StepButton}"
-                                              Margin="4,0,0,0"/>
-                            </StackPanel>
+                                              Style="{StaticResource StepButton}"/>
+                            </Grid>
                             <TextBlock Text="Seconds for the alarm to stop automatically" Style="{StaticResource HintText}" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Grid>
@@ -140,8 +148,8 @@
                                  Focusable="False"
                                  IsTabStop="False"
                                  Cursor="Arrow"/>
-                        <Button x:Name="BrowseSoundButton" Grid.Column="1" Content="Browse…" Margin="8,0,0,0"/>
-                        <Button x:Name="ClearSoundButton" Grid.Column="2" Content="Clear" Margin="8,0,0,0"/>
+                        <Button x:Name="BrowseSoundButton" Grid.Column="1" Content="Browse…"/>
+                        <Button x:Name="ClearSoundButton" Grid.Column="2" Content="Clear"/>
                     </Grid>
                 </StackPanel>
             </Border>
