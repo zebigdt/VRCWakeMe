@@ -18,7 +18,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="ArmedTitle"
-                               Text="Activated"
+                               Text="Inactive"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"
@@ -113,14 +113,18 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <CheckBox x:Name="ForegroundCheck"
-                      Content="Bring to foreground on alarm"
-                      Margin="0,0,8,0"
-                      VerticalAlignment="Center"/>
+            <StackPanel Margin="0,0,8,0" VerticalAlignment="Center">
+                <CheckBox x:Name="ForegroundCheck"
+                          Content="Bring to foreground on alarm"/>
+                <CheckBox x:Name="DisarmAfterDismissCheck"
+                          Content="Disactivate after dismissing alarm"
+                          Margin="0,8,0,0"/>
+            </StackPanel>
             <Button x:Name="TestButton"
                     Grid.Column="1"
                     Content="Test alarm"
-                    Style="{StaticResource AccentButton}"/>
+                    Style="{StaticResource AccentButton}"
+                    VerticalAlignment="Center"/>
         </Grid>
     </StackPanel>
 </Window>

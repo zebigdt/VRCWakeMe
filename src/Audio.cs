@@ -43,7 +43,6 @@ internal sealed class AlarmPlayer : IDisposable
     private WaveOutEvent? _output;
     private AudioFileReader? _reader;
     private LoopStream? _loop;
-    private CancellationTokenSource? _previewCts;
 
     public static string BundledAlarmPath => Path.Combine(AppContext.BaseDirectory, "Assets", "alarm.wav");
 
@@ -80,41 +79,9 @@ internal sealed class AlarmPlayer : IDisposable
         }
     }
 
-    public async Task PlayPreviewAsync(AppSettings settings, TimeSpan duration, CancellationToken cancellationToken = default)
-    {
-        CancellationTokenSource cts;
-        lock (_gate)
-        {
-            _previewCts?.Cancel();
-            _previewCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts = _previewCts;
-        }
-
-        Play(settings, loop: true);
-        try { await Task.Delay(duration, cts.Token); }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            lock (_gate)
-            {
-                if (ReferenceEquals(_previewCts, cts))
-                {
-                    StopLocked();
-                    _previewCts = null;
-                }
-            }
-
-            cts.Dispose();
-        }
-    }
-
     public void Stop()
     {
-        lock (_gate)
-        {
-            _previewCts?.Cancel();
-            StopLocked();
-        }
+        lock (_gate) StopLocked();
     }
 
     public void Dispose() => Stop();

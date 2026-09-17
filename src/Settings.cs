@@ -13,6 +13,7 @@ public sealed class AppSettings
     public string? OutputDeviceName { get; set; }
     public string? CustomSoundPath { get; set; }
     public bool ForegroundOnAlarm { get; set; } = true;
+    public bool DisarmAfterDismiss { get; set; }
 
     public void Clamp()
     {

@@ -64,6 +64,7 @@ public class WakeCoordinatorTests
 
         Assert.Equal(WakeResult.OnCooldown, result);
         Assert.False(wake.IsPlaying);
+        Assert.True(wake.Armed);
     }
 
     [Fact]
@@ -357,7 +358,8 @@ public class SettingsStoreTests
                 Volume = 0.4f,
                 OutputDeviceName = "Headset",
                 CustomSoundPath = @"C:\alarm.wav",
-                ForegroundOnAlarm = false
+                ForegroundOnAlarm = false,
+                DisarmAfterDismiss = true
             };
 
             store.Save(settings);
@@ -370,6 +372,7 @@ public class SettingsStoreTests
             Assert.Equal("Headset", loaded.OutputDeviceName);
             Assert.Equal(@"C:\alarm.wav", loaded.CustomSoundPath);
             Assert.False(loaded.ForegroundOnAlarm);
+            Assert.True(loaded.DisarmAfterDismiss);
         }
         finally
         {

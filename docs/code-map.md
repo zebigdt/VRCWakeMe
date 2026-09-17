@@ -23,15 +23,16 @@ The whole app: WPF plus Windows Forms (for the tray icon), targeting `net8.0-win
 | `OnOscMessage` | Feeds a parameter into the tracker, pushes debug on a state change, requests a wake on a pull |
 | `RefreshConnectionStatus` | Updates the "Linked with VRChat" line, only when the text actually changed |
 | `PushOscDebug` | Sends the four debug tiles, rate limited to once a second unless forced |
-| `RefreshTray` | Pushes armed and playing state into the tray icon and the window |
+| `RefreshTray` | Pushes armed and audible-alarm state into the tray icon and the window |
 | `BringToForeground` | Shows the window, enables the dismiss button, raises the window, focuses dismiss |
+| `DismissAlarm` | Stops a real or test alarm, and turns the switch Inactive when that setting is on |
 | `SetArmed` | Arms or disarms, then saves |
 | `ShowSettings` | Creates the settings window on demand, or re-shows the existing one |
 | `OnSettingsChanged`, `SaveSettings` | Applies edited settings to the live objects and writes them to disk |
 
 ### `SettingsWindow.xaml` / `SettingsWindow.xaml.cs`
 
-`SettingsWindow` — the only window. Activation switch, large dismiss button, output device, volume, cooldown, duration, custom sound, the foreground checkbox and the test button.
+`SettingsWindow` — the only window. Active/Inactive switch, large dismiss button, output device, volume, cooldown, duration, custom sound, the foreground and disarm-after-dismiss checkboxes, and the test button.
 
 | Member | Does |
 | --- | --- |
@@ -83,7 +84,7 @@ The alarm state machine, independent of sound and UI.
 
 | Type | Does |
 | --- | --- |
-| `AppSettings` | Armed, cooldown, duration, volume, output device, custom sound, foreground on alarm, plus `Clamp` to keep loaded values sane |
+| `AppSettings` | Armed, cooldown, duration, volume, output device, custom sound, foreground on alarm, disarm after dismiss, plus `Clamp` to keep loaded values sane |
 | `SettingsStore` | `Load` and `Save` against `%AppData%\VRCWakeMe\settings.json`, falling back to defaults when the file is missing or unreadable |
 
 ### `Audio.cs`
@@ -92,7 +93,7 @@ The alarm state machine, independent of sound and UI.
 | --- | --- |
 | `AudioDeviceOption` | An output device as shown in the dropdown |
 | `LoopStream` | Wraps a `WaveStream` and restarts it at the end so the alarm keeps going |
-| `AlarmPlayer` | `ListDevices`, `Play` (looping, on the chosen device, at the chosen volume), `PlayPreviewAsync` for the test button, `Stop`, and `BundledAlarmPath` for the shipped `alarm.wav` |
+| `AlarmPlayer` | `ListDevices`, `Play` (looping, on the chosen device, at the chosen volume), `Stop`, and `BundledAlarmPath` for the shipped `alarm.wav` |
 
 ### `Tray.cs`
 

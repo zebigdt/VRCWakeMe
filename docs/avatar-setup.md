@@ -76,7 +76,7 @@ Add both. `WakeMe_IsGrabbed` alone still works, but then the alarm fires on the 
 3. Action Menu → **Options → Avatar → Debug** and confirm `WakeMe_IsGrabbed` and `WakeMe_Stretch` are in the list. Grab the handle and pull: one flips to true, the other climbs.
 4. Action Menu → **OSC → Enable**.
 5. Start VRCWakeMe. Settings should switch to **Linked with VRChat**. Action Menu → **OSC → OSC Debug** shows tiles for `/VRCWakeMe/armed`, `/VRCWakeMe/disarmed`, `/VRCWakeMe/grabbed`, and `/VRCWakeMe/pulled`; the ones matching the current state keep flashing.
-6. With **Activated** on, grab the handle and tug about a centimeter. `grabbed` and then `pulled` should flash, and the alarm plays.
+6. With **Active** on, grab the handle and tug about a centimeter. `grabbed` and then `pulled` should flash, and the alarm plays.
 
 If you cannot grab your own handle while testing, check the Quick Menu setting that lets you interact with your own avatar.
 

@@ -133,7 +133,7 @@ internal sealed class TrayIcon : IDisposable
 
     public TrayIcon()
     {
-        _armedItem = new ToolStripMenuItem("Activated") { CheckOnClick = true };
+        _armedItem = new ToolStripMenuItem("Active") { CheckOnClick = true };
         _armedItem.CheckedChanged += (_, _) =>
         {
             if (!_suppressArmedEvent) ArmedChanged?.Invoke(_armedItem.Checked);
@@ -174,7 +174,7 @@ internal sealed class TrayIcon : IDisposable
         _suppressArmedEvent = false;
         _dismissItem.Enabled = playing;
         _notify.Icon = armed || playing ? _armedIcon : _disarmedIcon;
-        _notify.Text = playing ? "VRCWakeMe — alarm" : armed ? "VRCWakeMe — activated" : "VRCWakeMe — inactive";
+        _notify.Text = playing ? "VRCWakeMe — alarm" : armed ? "VRCWakeMe — active" : "VRCWakeMe — inactive";
     }
 
     public void Dispose()

@@ -17,6 +17,7 @@ public partial class App : System.Windows.Application
     private SettingsWindow? _settingsWindow;
     private string _status = "Not linked with VRChat";
     private long _lastDebugMs;
+    private bool _testing;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -43,6 +44,7 @@ public partial class App : System.Windows.Application
         _player = new AlarmPlayer();
         _wake.AlarmStarted += () => Dispatcher.BeginInvoke(() =>
         {
+            _testing = false;
             _player.Play(_settings, loop: true);
             if (_settings.ForegroundOnAlarm) BringToForeground();
         });
@@ -68,7 +70,7 @@ public partial class App : System.Windows.Application
 
         _tray = new TrayIcon();
         _tray.ArmedChanged += SetArmed;
-        _tray.DismissRequested += () => _wake.Dismiss();
+        _tray.DismissRequested += DismissAlarm;
         _tray.OpenSettingsRequested += ShowSettings;
         _tray.ExitRequested += Shutdown;
         RefreshTray();
@@ -124,11 +126,14 @@ public partial class App : System.Windows.Application
         _osc.SendDebug(_wake.Armed, _grabs.AnyGrabbed, _grabs.AnyPulled);
     }
 
+    private bool AlarmAudible => _wake.IsPlaying || _testing;
+
     private void RefreshTray()
     {
-        _tray.SetState(_wake.Armed, _wake.IsPlaying);
+        var alarming = AlarmAudible;
+        _tray.SetState(_wake.Armed, alarming);
         _settingsWindow?.SetArmed(_wake.Armed);
-        _settingsWindow?.SetAlarmPlaying(_wake.IsPlaying);
+        _settingsWindow?.SetAlarmPlaying(alarming);
     }
 
     private void BringToForeground()
@@ -138,9 +143,19 @@ public partial class App : System.Windows.Application
 
         // The state change that enables the button is queued behind this call, and
         // WPF will not focus a disabled control, so sync it up front.
-        _settingsWindow.SetAlarmPlaying(_wake.IsPlaying);
+        _settingsWindow.SetAlarmPlaying(AlarmAudible);
         WindowForeground.Bring(_settingsWindow);
         _settingsWindow.FocusDismiss();
+    }
+
+    private void DismissAlarm()
+    {
+        var wasWake = _wake.IsPlaying;
+        _testing = false;
+        _wake.Dismiss();
+        _player.Stop();
+        if (wasWake && _settings.DisarmAfterDismiss) SetArmed(false);
+        else RefreshTray();
     }
 
     private void SetArmed(bool armed)
@@ -170,15 +185,17 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        _settingsWindow.TestRequested += async () =>
+        _settingsWindow.TestRequested += () =>
         {
-            try { await _player.PlayPreviewAsync(_settings, TimeSpan.FromSeconds(3)); }
-            catch (Exception ex) { System.Windows.MessageBox.Show($"Could not play alarm: {ex.Message}", "VRCWakeMe"); }
-            finally { if (!_wake.IsPlaying) _player.Stop(); }
+            if (_wake.IsPlaying) return;
+            _testing = true;
+            try { _player.Play(_settings, loop: true); }
+            catch (Exception ex) { _testing = false; System.Windows.MessageBox.Show($"Could not play alarm: {ex.Message}", "VRCWakeMe"); }
+            RefreshTray();
         };
-        _settingsWindow.DismissRequested += () => _wake.Dismiss();
+        _settingsWindow.DismissRequested += DismissAlarm;
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        _settingsWindow.SetAlarmPlaying(_wake.IsPlaying);
+        _settingsWindow.SetAlarmPlaying(AlarmAudible);
         try { _settingsWindow.Show(); }
         catch (Exception ex) { System.Windows.MessageBox.Show(ex.ToString(), "VRCWakeMe settings"); }
     }

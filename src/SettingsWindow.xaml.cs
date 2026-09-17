@@ -52,6 +52,8 @@ public partial class SettingsWindow : Window
         };
         ForegroundCheck.Checked += (_, _) => Persist();
         ForegroundCheck.Unchecked += (_, _) => Persist();
+        DisarmAfterDismissCheck.Checked += (_, _) => Persist();
+        DisarmAfterDismissCheck.Unchecked += (_, _) => Persist();
         ArmedToggle.Checked += (_, _) => OnArmedToggle(true);
         ArmedToggle.Unchecked += (_, _) => OnArmedToggle(false);
 
@@ -95,6 +97,7 @@ public partial class SettingsWindow : Window
         _customSoundPath = _settings.CustomSoundPath;
         RefreshSoundUi();
         ForegroundCheck.IsChecked = _settings.ForegroundOnAlarm;
+        DisarmAfterDismissCheck.IsChecked = _settings.DisarmAfterDismiss;
         ArmedToggle.IsChecked = armed;
         UpdateArmedLabel(armed);
         _loading = false;
@@ -113,7 +116,7 @@ public partial class SettingsWindow : Window
 
     private void UpdateArmedLabel(bool armed)
     {
-        ArmedTitle.Text = armed ? "Activated" : "Inactive";
+        ArmedTitle.Text = armed ? "Active" : "Inactive";
     }
 
     private void RefreshSoundUi()
@@ -158,6 +161,7 @@ public partial class SettingsWindow : Window
         _settings.MaxDurationSeconds = NumericTextBox.Read(MaxDurationBox, _settings.MaxDurationSeconds, MinSeconds, MaxSeconds);
         _settings.CustomSoundPath = _customSoundPath;
         _settings.ForegroundOnAlarm = ForegroundCheck.IsChecked == true;
+        _settings.DisarmAfterDismiss = DisarmAfterDismissCheck.IsChecked == true;
         _settings.Clamp();
         _onChanged();
     }
